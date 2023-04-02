@@ -21,12 +21,11 @@ func TestFailCreateNewClientEmptyArgs(t *testing.T) {
 }
 
 func TestUpdateClient(t *testing.T) {
-	client, _ := NewClient("test", "fakemail")
-
-	err := client.Update("test2", "fakemail2")
-	assert.NotNil(t, err)
-
-	assert.Equal(t, "test2", client.Name)
+	client, _ := NewClient("John Doe", "j@j.com")
+	err := client.Update("John Doe Update", "j@j.com")
+	assert.Nil(t, err)
+	assert.Equal(t, "John Doe Update", client.Name)
+	assert.Equal(t, "j@j.com", client.Email)
 }
 
 func TestFailUpdatesClientEmptyArgs(t *testing.T) {

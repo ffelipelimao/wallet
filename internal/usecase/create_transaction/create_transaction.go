@@ -1,4 +1,4 @@
-package createtransaction
+package create_transaction
 
 import (
 	"github.com/ffelipelimao/walletcore/internal/entities"

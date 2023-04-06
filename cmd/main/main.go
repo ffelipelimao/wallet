@@ -9,7 +9,10 @@ import (
 	"github.com/ffelipelimao/walletcore/internal/usecase/create_account"
 	"github.com/ffelipelimao/walletcore/internal/usecase/create_client"
 	"github.com/ffelipelimao/walletcore/internal/usecase/create_transaction"
+	"github.com/ffelipelimao/walletcore/internal/web"
+	"github.com/ffelipelimao/walletcore/internal/web/webserver"
 	"github.com/ffelipelimao/walletcore/pkg/events"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
@@ -31,4 +34,17 @@ func main() {
 	createAccountUseCase := create_account.NewCreateAccountUseCase(clientDb, accountDb)
 	createTransactionUseCase := create_transaction.NewCreateTransactionUseCase(accountDb, transactionDb, eventDispatcher, transactionCreatedEvent)
 
+	webserver := webserver.NewWebServer(":3333")
+
+	clientHandler := web.NewWebClientHandler(*createClientUseCase)
+	accountHandler := web.NewWebAccountHandler(*createAccountUseCase)
+	transactionHandler := web.NewWebTransactionHandler(*createTransactionUseCase)
+
+	webserver.AddHandler("/clients", clientHandler.CreateClient)
+	webserver.AddHandler("/accounts", accountHandler.CreateAccount)
+	webserver.AddHandler("/transactions", transactionHandler.CreateTransaction)
+
+	fmt.Println("Server is running")
+
+	webserver.Start()
 }

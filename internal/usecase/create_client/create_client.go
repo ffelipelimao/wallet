@@ -20,17 +20,17 @@ type CreateClientOutputDTO struct {
 	UpdatedAt time.Time
 }
 
-type CreateClientClientUseCase struct {
+type CreateClientUseCase struct {
 	ClientGateway gateway.ClientGateway
 }
 
-func NewCreateClientUseCase(clientGateway gateway.ClientGateway) *CreateClientClientUseCase {
-	return &CreateClientClientUseCase{
+func NewCreateClientUseCase(clientGateway gateway.ClientGateway) *CreateClientUseCase {
+	return &CreateClientUseCase{
 		ClientGateway: clientGateway,
 	}
 }
 
-func (c *CreateClientClientUseCase) Execute(input CreateClientInputDTO) (*CreateClientOutputDTO, error) {
+func (c *CreateClientUseCase) Execute(input CreateClientInputDTO) (*CreateClientOutputDTO, error) {
 	client, err := entities.NewClient(input.Name, input.Email)
 	if err != nil {
 		return nil, err

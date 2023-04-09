@@ -32,17 +32,17 @@ func TestCreateTransactionUseCase_Execute(t *testing.T) {
 	tm.On("Save", mock.Anything).Return(nil)
 
 	dispatcher := events.NewEventDispatcher()
-	event := event.NewTransactionCreated()
+	eventTransaction := event.NewTransactionCreated()
+	eventBalance := event.NewBalanceUpdated()
+	ctx := context.Background()
 
-	uc := NewCreateTransactionUseCase(mockUow, dispatcher, event)
+	uc := NewCreateTransactionUseCase(mockUow, dispatcher, eventTransaction, eventBalance)
 
 	input := CreateTransactionInputDTO{
 		AccountIDFrom: account1.ID,
 		AccountIDTo:   account2.ID,
 		Amount:        float64(100),
 	}
-
-	ctx := context.Background()
 
 	output, err := uc.Execute(ctx, input)
 	assert.Nil(t, err)

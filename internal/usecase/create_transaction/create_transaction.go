@@ -33,17 +33,20 @@ type CreateTransactionUseCase struct {
 	uow                uow.UowInterface
 	EventDispatcher    events.EventDispatcherInterface
 	TransactionCreated events.EventInterface
+	balanceUpdated     events.EventInterface
 }
 
 func NewCreateTransactionUseCase(
 	uow uow.UowInterface,
 	eventDispatcher events.EventDispatcherInterface,
 	transactionCreated events.EventInterface,
+	balanceUpdated events.EventInterface,
 ) *CreateTransactionUseCase {
 	return &CreateTransactionUseCase{
 		uow:                uow,
 		EventDispatcher:    eventDispatcher,
 		TransactionCreated: transactionCreated,
+		balanceUpdated:     balanceUpdated,
 	}
 }
 
@@ -104,7 +107,10 @@ func (c *CreateTransactionUseCase) Execute(ctx context.Context, input CreateTran
 		return nil, err
 	}
 
+	c.balanceUpdated.SetPayload(balanceUpdatedOutput)
+	c.EventDispatcher.Dispatch(c.balanceUpdated)
 	return output, nil
+
 }
 
 func (uc *CreateTransactionUseCase) getAccountRepository(ctx context.Context) gateway.AccountGateway {

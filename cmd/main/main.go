@@ -5,14 +5,17 @@ import (
 	"database/sql"
 	"fmt"
 
+	ckafka "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/ffelipelimao/walletcore/internal/database"
 	"github.com/ffelipelimao/walletcore/internal/event"
+	"github.com/ffelipelimao/walletcore/internal/event/handler"
 	"github.com/ffelipelimao/walletcore/internal/usecase/create_account"
 	"github.com/ffelipelimao/walletcore/internal/usecase/create_client"
 	"github.com/ffelipelimao/walletcore/internal/usecase/create_transaction"
 	"github.com/ffelipelimao/walletcore/internal/web"
 	"github.com/ffelipelimao/walletcore/internal/web/webserver"
 	"github.com/ffelipelimao/walletcore/pkg/events"
+	"github.com/ffelipelimao/walletcore/pkg/kafka"
 	"github.com/ffelipelimao/walletcore/pkg/uow"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -24,9 +27,17 @@ func main() {
 	}
 	defer db.Close()
 
+	configMap := ckafka.ConfigMap{
+		"bootstrap.servers": "kafka:29092",
+		"group.id":          "wallet",
+	}
+	kafkaProducer := kafka.NewKafkaProducer(&configMap)
+
 	eventDispatcher := events.NewEventDispatcher()
+	eventDispatcher.Register("TransactionCreated", handler.NewTransactionCreatedKafkaHandler(kafkaProducer))
+	eventDispatcher.Register("BalanceUpdated", handler.NewUpdateBalanceKafkaHandler(kafkaProducer))
 	transactionCreatedEvent := event.NewTransactionCreated()
-	//eventDispatcher.Register("TransactionCreated", handler)
+	balanceUpdatedEvent := event.NewBalanceUpdated()
 
 	clientDb := database.NewClientDB(db)
 	accountDb := database.NewAccountDB(db)
@@ -44,7 +55,7 @@ func main() {
 
 	createClientUseCase := create_client.NewCreateClientUseCase(clientDb)
 	createAccountUseCase := create_account.NewCreateAccountUseCase(clientDb, accountDb)
-	createTransactionUseCase := create_transaction.NewCreateTransactionUseCase(uow, eventDispatcher, transactionCreatedEvent)
+	createTransactionUseCase := create_transaction.NewCreateTransactionUseCase(uow, eventDispatcher, transactionCreatedEvent, balanceUpdatedEvent)
 
 	webserver := webserver.NewWebServer(":3333")
 

@@ -3,27 +3,13 @@ package create_client
 import (
 	"testing"
 
-	"github.com/ffelipelimao/walletcore/internal/entities"
+	"github.com/ffelipelimao/walletcore/internal/usecase/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-type ClientGatewayMock struct {
-	mock.Mock
-}
-
-func (m *ClientGatewayMock) Get(id string) (*entities.Client, error) {
-	args := m.Called(id)
-	return args.Get(0).(*entities.Client), args.Error(1)
-}
-
-func (m *ClientGatewayMock) Save(client *entities.Client) error {
-	args := m.Called(client)
-	return args.Error(0)
-}
-
 func TestCreateClientUseCase_Execute(t *testing.T) {
-	m := &ClientGatewayMock{}
+	m := &mocks.ClientGatewayMock{}
 	m.On("Save", mock.Anything).Return(nil)
 
 	uc := NewCreateClientUseCase(m)

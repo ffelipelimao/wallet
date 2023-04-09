@@ -1,37 +1,16 @@
 package create_transaction
 
 import (
+	"context"
 	"testing"
 
 	"github.com/ffelipelimao/walletcore/internal/entities"
 	"github.com/ffelipelimao/walletcore/internal/event"
+	"github.com/ffelipelimao/walletcore/internal/usecase/mocks"
 	"github.com/ffelipelimao/walletcore/pkg/events"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-type AccountGatewayMock struct {
-	mock.Mock
-}
-
-func (m *AccountGatewayMock) Get(id string) (*entities.Account, error) {
-	args := m.Called(id)
-	return args.Get(0).(*entities.Account), args.Error(1)
-}
-
-func (m *AccountGatewayMock) Save(account *entities.Account) error {
-	args := m.Called(account)
-	return args.Error(0)
-}
-
-type TransactionGatewayMock struct {
-	mock.Mock
-}
-
-func (m *TransactionGatewayMock) Save(transaction *entities.Transaction) error {
-	args := m.Called(transaction)
-	return args.Error(0)
-}
 
 func TestCreateTransactionUseCase_Execute(t *testing.T) {
 	client1, _ := entities.NewClient("test", "fakemail")
@@ -42,17 +21,20 @@ func TestCreateTransactionUseCase_Execute(t *testing.T) {
 	account2 := entities.NewAccount(client2)
 	account2.Credit(1000)
 
-	cm := &AccountGatewayMock{}
+	mockUow := &mocks.UowMock{}
+	mockUow.On("Do", mock.Anything, mock.Anything).Return(nil)
+
+	cm := &mocks.AccountGatewayMock{}
 	cm.On("Get", account1.ID).Return(account1, nil)
 	cm.On("Get", account2.ID).Return(account2, nil)
 
-	tm := &TransactionGatewayMock{}
+	tm := &mocks.TransactionGatewayMock{}
 	tm.On("Save", mock.Anything).Return(nil)
 
 	dispatcher := events.NewEventDispatcher()
 	event := event.NewTransactionCreated()
 
-	uc := NewCreateTransactionUseCase(cm, tm, dispatcher, event)
+	uc := NewCreateTransactionUseCase(mockUow, dispatcher, event)
 
 	input := CreateTransactionInputDTO{
 		AccountIDFrom: account1.ID,
@@ -60,13 +42,12 @@ func TestCreateTransactionUseCase_Execute(t *testing.T) {
 		Amount:        float64(100),
 	}
 
-	output, err := uc.Execute(input)
+	ctx := context.Background()
+
+	output, err := uc.Execute(ctx, input)
 	assert.Nil(t, err)
-	assert.NotNil(t, output.ID)
+	assert.NotNil(t, output)
+	mockUow.AssertExpectations(t)
+	mockUow.AssertNumberOfCalls(t, "Do", 1)
 
-	cm.AssertExpectations(t)
-	tm.AssertExpectations(t)
-
-	tm.AssertNumberOfCalls(t, "Save", 1)
-	cm.AssertNumberOfCalls(t, "Get", 2)
 }
